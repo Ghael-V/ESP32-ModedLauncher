@@ -116,7 +116,7 @@ String ssid;
 String pwd;
 String wui_usr = "admin";
 String wui_pwd = "launcher";
-String dwn_path = "/downloads/";
+String dwn_path = "/firmware/";
 String lastInstalledApp = "";
 uint16_t total_firmware = 0;
 uint8_t current_page = 1;
@@ -130,6 +130,7 @@ uint8_t buff[1024] = {0};
 
 #include "app_registry.h"
 #include "display.h"
+#include "firmware_picker.h"
 #include "massStorage.h"
 #include "mykeyboard.h"
 #include "onlineLauncher.h"
@@ -246,6 +247,15 @@ void setup() {
 #endif
     // Gets the config.conf from SD Card and fill out the settings JSON
     getConfigs();
+    // One-time migration: dwn_path used to default to "/downloads/" before
+    // OTA downloads were unified with the SD:/firmware picker. Persisted
+    // NVS/config.conf values from older installs would otherwise keep
+    // overriding the new "/firmware/" default forever.
+    if (dwn_path == "/downloads/") {
+        dwn_path = "/firmware/";
+        saveIntoNVS();
+        saveConfigs();
+    }
 #if defined(HAS_TOUCH)
     TouchFooter2();
 #endif
@@ -337,6 +347,11 @@ Launcher:
 **********************************************************************/
 #ifndef HEADLESS
 void loop() {
+    // Default flow: pick a firmware straight out of SD:/firmware.
+    // Returns only when the user explicitly asks for the Advanced Menu,
+    // in which case we fall through to the full menu below, unchanged.
+    showFirmwarePicker();
+
     bool redraw = true;
     bool update_sd;
     int index = 0;

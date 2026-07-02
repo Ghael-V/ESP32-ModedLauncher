@@ -172,11 +172,6 @@ void TouchFooter2(uint16_t color) {
 ***************************************************************************************/
 void initDisplay(bool doAll) {
 #ifndef HEADLESS
-    static uint8_t _name = launcherRandom(0, 3);
-    String name = "@Pirata";
-    String txt;
-    int cor, _x, _y, show;
-
 #ifdef E_PAPER_DISPLAY // epaper display draws only once
     static bool runOnce = false;
     static long lastMillis = 0;
@@ -189,77 +184,44 @@ void initDisplay(bool doAll) {
     }
 #endif
 
-    if (_name == 1) name = "u/bmorcelli";
-    else if (_name == 2) name = "gh/bmorcelli";
-    tft->drawRoundRect(3, 3, tftWidth - 6, tftHeight - 6, 5, FGCOLOR);
-    tft->setTextSize(FP);
-    tft->setCursor(10, 10);
-    cor = 0;
-    show = launcherRandom(0, 40);
-    _x = tft->getCursorX();
-    _y = tft->getCursorY();
+    // Draw the splash once and latch it: this function gets called on every
+    // tick of the boot-hold loop (~20x/sec), so a fillScreen() on every call
+    // made the whole splash visibly flash. Only doAll (a fresh boot / the
+    // "Boot Animation" preview) forces a redraw.
+    static bool drawn = false;
+    if (doAll) drawn = false;
 
-    while (tft->getCursorY() < (tftHeight - (LH + 4))) {
-        cor = launcherRandom(0, 11);
-        tft->setTextSize(FP);
-        show = launcherRandom(0, 40);
-        if (show == 0 || doAll) {
-            if (cor == 10) {
-                txt = " ";
-            } else if (cor & 1) {
-                tft->setTextColor(odd_color, BGCOLOR);
-                txt = String(cor);
-            } else {
-                tft->setTextColor(even_color, BGCOLOR);
-                txt = String(cor);
-            }
+    if (!drawn) {
+        tft->fillScreen(BGCOLOR);
+        tft->drawRoundRect(3, 3, tftWidth - 6, tftHeight - 6, 5, FGCOLOR);
 
-            if (_x >= (tftWidth - (LW * FP + 4))) {
-                _x = 10;
-                _y += LH * FP;
-            } else if (_x < 10) {
-                _x = 10;
-            }
-            if (_y >= (tftHeight - (LH * FP + LH * FP / 2))) break;
-            tft->setCursor(_x, _y);
-            if (_y > (tftHeight - (LH * FM + LH * FP / 2)) &&
-                _x >= (tftWidth - ((LW * FP + 4) + LW * FP * name.length()))) {
-                tft->setTextColor(FGCOLOR);
-                tft->print(name);
-                _x += LW * FP * name.length();
-            } else {
-                tft->print(txt);
-                _x += LW * FP;
-            }
-        } else {
-            if (_y > (tftHeight - (LH * FM + LH * FP / 2)) &&
-                _x >= (tftWidth - ((LW * FP + 4) + LW * FP * name.length())))
-                _x += LW * FP * name.length();
-            else _x += LW * FP;
-
-            if (_x >= (tftWidth - (LW * FP + 4))) {
-                _x = 10;
-                _y += LH * FP;
-            }
-        }
-        tft->setCursor(_x, _y);
-    }
-    tft->setTextSize(FG);
-    tft->setTextColor(FGCOLOR);
-#if TFT_HEIGHT > 200
-    tft->drawCentreString("Launcher", tftWidth / 2, tftHeight / 2 - 10, 1);
-#else
-    tft->drawCentreString("Launcher", tftWidth / 2, tftHeight / 2 - 10, 1);
-#endif
-    tft->setTextSize(FG);
-    tft->setTextColor(FGCOLOR);
-
-    String selectedAppName = launcherSelectedBootAppName();
-    if (!selectedAppName.isEmpty()) {
-        tft->setTextSize(FM);
+        tft->setTextSize(FG);
         tft->setTextColor(FGCOLOR, BGCOLOR);
-        int appTextY = tftHeight - (1.5 * (FM * LH) + 10);
-        tft->drawCentreString(" " + selectedAppName + " ", tftWidth / 2, appTextY, 1);
+        tft->drawCentreString("GHAEL", tftWidth / 2, tftHeight / 2 - (FG * LH), 1);
+
+        int lineHalfW = tftWidth / 5;
+        int lineY = tftHeight / 2 - (FG * LH) / 4;
+        tft->drawFastHLine(tftWidth / 2 - lineHalfW, lineY, lineHalfW * 2, FGCOLOR);
+
+        tft->setTextSize(FM);
+        tft->drawCentreString("LAUNCHER", tftWidth / 2, tftHeight / 2 + (FM * LH) / 2, 1);
+
+        tft->setTextSize(FP);
+        tft->setTextColor(FGCOLOR, BGCOLOR);
+        int creditY2 = tftHeight - (FP * LH) - 6;
+        int creditY1 = creditY2 - (FP * LH) - 2;
+        tft->drawCentreString("BMorcelli moded launcher", tftWidth / 2, creditY1, 1);
+        tft->drawCentreString("with love by Ghael", tftWidth / 2, creditY2, 1);
+
+        String selectedAppName = launcherSelectedBootAppName();
+        if (!selectedAppName.isEmpty()) {
+            tft->setTextSize(FM);
+            tft->setTextColor(FGCOLOR, BGCOLOR);
+            int appTextY = creditY1 - (FM * LH) - 4;
+            tft->drawCentreString(" " + selectedAppName + " ", tftWidth / 2, appTextY, 1);
+        }
+
+        drawn = true;
     }
 
 #ifdef E_PAPER_DISPLAY // epaper display draws only once

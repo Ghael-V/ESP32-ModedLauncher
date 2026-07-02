@@ -1,5 +1,6 @@
 .pio
 .vscode
+.claude
 *.bin
 include/webFiles.h
 checksum.sha256

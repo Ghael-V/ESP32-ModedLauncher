@@ -658,7 +658,7 @@ void defaultValues() {
     dev_mode = false;
     wui_usr = "admin";
     wui_pwd = "launcher";
-    dwn_path = "/downloads/";
+    dwn_path = "/firmware/";
 #if defined(HEADLESS)
     // SD Pins
     _miso = 0;
